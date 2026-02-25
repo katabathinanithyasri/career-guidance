@@ -1,87 +1,214 @@
 import { Link, useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import toast from "react-hot-toast";
 
 const Login = () => {
-  const [form, setForm] = useState({ role: "user", username: "", password: "" });
+  const [form, setForm] = useState({
+    role: "user",
+    email: "",
+    password: "",
+    captchaInput: ""
+  });
+
+  const [emailError, setEmailError] = useState("");
+  const [generatedCaptcha, setGeneratedCaptcha] = useState("");
   const navigate = useNavigate();
 
+  // Generate captcha on load
+  useEffect(() => {
+    generateCaptcha();
+  }, []);
+
+  const generateCaptcha = () => {
+    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+    let captcha = "";
+    for (let i = 0; i < 5; i++) {
+      captcha += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    setGeneratedCaptcha(captcha);
+  };
+
+  const validateEmail = (email) => {
+    const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!regex.test(email)) {
+      setEmailError("Please enter a valid email address.");
+    } else {
+      setEmailError("");
+    }
+  };
+
   const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+
+    setForm({ ...form, [name]: value });
+
+    if (name === "email") {
+      validateEmail(value);
+    }
   };
 
   const handleLogin = () => {
-    if (!form.username || !form.password) {
+    if (!form.email || !form.password || !form.captchaInput) {
       toast.error("Please fill all fields!");
       return;
     }
 
+    if (emailError) {
+      toast.error("Please fix errors before submitting.");
+      return;
+    }
+
+    // Case-insensitive captcha check
+    if (form.captchaInput.trim().toUpperCase() !== generatedCaptcha) {
+      toast.error("Captcha does not match!");
+      generateCaptcha();
+      return;
+    }
+
     localStorage.setItem("role", form.role);
-    navigate(form.role === "admin" ? "/admin" : "/user");
+    localStorage.setItem("email", form.email);
+
     toast.success("Logged in successfully 🎉");
+    navigate(form.role === "admin" ? "/admin" : "/user");
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100">
+    <div className="flex items-center justify-center min-h-screen
+                    bg-gradient-to-br from-blue-50 via-sky-100 to-indigo-100">
 
-      {/* Login Card */}
-      <div className="bg-blue-50 p-8 rounded-2xl shadow-lg w-full max-w-md space-y-6 border border-blue-100">
+      <div className="w-full max-w-md bg-white p-10 rounded-xl 
+                      shadow-lg border border-blue-100">
 
-        <h1 className="text-2xl font-bold text-gray-800 text-center">
-          Login
-        </h1>
+        {/* Heading */}
+        <div className="mb-8 text-center">
+          <h1 className="text-3xl font-semibold text-gray-800">
+            Welcome Back
+          </h1>
+          <p className="text-gray-500 text-sm mt-2">
+            Sign in to continue
+          </p>
+        </div>
 
-       {/* Role Dropdown */}
-<select
-  name="role"
-  value={form.role}
-  onChange={handleChange}
-  className="w-full p-3 rounded-lg bg-white border border-blue-300 
-             text-gray-800 font-medium
-             focus:outline-none focus:ring-2 focus:ring-blue-500"
->
-  <option value="user">User</option>
-  <option value="admin">Admin</option>
-</select>
+        {/* Role Toggle */}
+        <div className="mb-6">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Select Role
+          </label>
+          <div className="flex bg-blue-50 rounded-lg p-1">
+            <button
+              type="button"
+              onClick={() => setForm({ ...form, role: "user" })}
+              className={`w-1/2 py-2 rounded-md transition ${
+                form.role === "user"
+                  ? "bg-blue-600 text-white"
+                  : "text-gray-700"
+              }`}
+            >
+              User
+            </button>
+            <button
+              type="button"
+              onClick={() => setForm({ ...form, role: "admin" })}
+              className={`w-1/2 py-2 rounded-md transition ${
+                form.role === "admin"
+                  ? "bg-blue-600 text-white"
+                  : "text-gray-700"
+              }`}
+            >
+              Admin
+            </button>
+          </div>
+        </div>
 
-{/* Username */}
-<input
-  type="text"
-  name="username"
-  value={form.username}
-  onChange={handleChange}
-  placeholder="Username"
-  className="w-full p-3 rounded-lg bg-white border border-gray-300
-             text-gray-800 placeholder-gray-400
-             focus:outline-none focus:ring-2 focus:ring-blue-400"
-/>
+        {/* Email */}
+        <div className="mb-5">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Email
+          </label>
+          <input
+            type="email"
+            name="email"
+            value={form.email}
+            onChange={handleChange}
+            placeholder="Enter your email"
+            className={`w-full p-3 rounded-lg border text-gray-800 bg-white ${
+              emailError ? "border-red-400" : "border-gray-300"
+            } focus:outline-none focus:ring-2 focus:ring-blue-500`}
+          />
+          {emailError && (
+            <p className="text-red-500 text-sm mt-1">
+              {emailError}
+            </p>
+          )}
+        </div>
 
-{/* Password */}
-<input
-  type="password"
-  name="password"
-  value={form.password}
-  onChange={handleChange}
-  placeholder="Password"
-  className="w-full p-3 rounded-lg bg-white border border-gray-300
-             text-gray-800 placeholder-gray-400
-             focus:outline-none focus:ring-2 focus:ring-blue-400"
-/>
+        {/* Password */}
+        <div className="mb-5">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Password
+          </label>
+          <input
+            type="password"
+            name="password"
+            value={form.password}
+            onChange={handleChange}
+            placeholder="Enter any password"
+            className="w-full p-3 rounded-lg border border-gray-300 
+                       text-gray-800 bg-white
+                       focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
 
+        {/* Captcha */}
+        <div className="mb-6">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Enter Captcha
+          </label>
+
+          <div className="flex items-center justify-between mb-2">
+            <span className="bg-blue-100 text-blue-800 px-4 py-2 
+                             rounded-md font-mono tracking-widest">
+              {generatedCaptcha}
+            </span>
+            <button
+              type="button"
+              onClick={generateCaptcha}
+              className="text-sm text-blue-600 hover:underline"
+            >
+              Refresh
+            </button>
+          </div>
+
+          <input
+            type="text"
+            name="captchaInput"
+            value={form.captchaInput}
+            onChange={handleChange}
+            placeholder="Type captcha here"
+            className="w-full p-3 rounded-lg border border-gray-300 
+                       text-gray-800 bg-white
+                       focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+
+        {/* Login Button */}
         <button
           onClick={handleLogin}
-          className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium"
+          className="w-full py-3 bg-blue-600 text-white rounded-lg 
+                     hover:bg-blue-700 transition duration-300 font-medium"
         >
-          Login
+          Sign In
         </button>
 
-        <p className="text-center text-gray-500">
+        <p className="text-center text-gray-500 text-sm mt-6">
           Don't have an account?{" "}
-          <Link to="/register" className="text-blue-600 hover:underline">
+          <Link
+            to="/register"
+            className="text-blue-600 font-medium hover:underline"
+          >
             Register
           </Link>
         </p>
-
       </div>
     </div>
   );

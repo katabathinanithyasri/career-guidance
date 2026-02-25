@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Outlet } from "react-router-dom"; // <- IMPORTANT
+import { Outlet } from "react-router-dom"; 
 import Navbar from "./Navbar";
 import Sidebar from "./Sidebar";
 import AdminSidebar from "./AdminSidebar";
@@ -21,7 +21,7 @@ const LayoutWrapper = () => {
 
         {/* Page content */}
         <main className="flex-1 bg-gray-50 dark:bg-gray-900 p-6">
-          <Outlet /> {/* <- This is key for nested routes */}
+          <Outlet /> 
         </main>
 
         <Footer />
