@@ -1,91 +1,161 @@
-const AdminUsers = () => {
-  const users = [
-    {
-      name: "nithya",
-      email: "2400031650@kluniversity.in",
-      phone: "07997878140",
-      age: 18,
-      address: "4/46, Shivalayam Street",
-      interests: "coding",
-      skills: "fsa, java",
-      strengths: "problem solving",
-      role: "user",
-    },
-    {
-      name: "Rahul Kumar",
-      email: "rahul.kumar@example.com",
-      phone: "9876543210",
-      age: 22,
-      address: "123 MG Road, Bangalore",
-      interests: "design, art",
-      skills: "Figma, Adobe XD",
-      strengths: "creativity, attention to detail",
-      role: "user",
-    },
-    {
-      name: "Priya Sharma",
-      email: "priya.s@example.com",
-      phone: "8765432109",
-      age: 20,
-      address: "456 Park Street, Mumbai",
-      interests: "data science, AI",
-      skills: "Python, Machine Learning",
-      strengths: "analytical thinking",
-      role: "user",
-    },
-  ];
+import React, { useEffect, useState } from "react";
+import toast from "react-hot-toast";
+import { getUsers, addUser, deleteUser } from "../../../services/userService";
+import { getCounselors } from "../../../services/counselorService";
+
+const ManageUsers = () => {
+  const [users, setUsers] = useState([]);
+  const [counselors, setCounselors] = useState([]);
+
+  const [form, setForm] = useState({
+    name: "",
+    email: "",
+    password: "",
+    role: "USER",
+    counselorId: ""
+  });
+
+  const fetchUsers = async () => {
+    try {
+      setUsers(await getUsers());
+    } catch {
+      toast.error("Failed to load users");
+    }
+  };
+
+  const fetchCounselors = async () => {
+    try {
+      setCounselors(await getCounselors());
+    } catch {
+      toast.error("Failed to load counselors");
+    }
+  };
+
+  useEffect(() => {
+    fetchUsers();
+    fetchCounselors();
+  }, []);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    const payload = {
+      ...form,
+      counselor: form.counselorId ? { id: form.counselorId } : null
+    };
+
+    try {
+      await addUser(payload);
+      toast.success("User added");
+      setForm({ name: "", email: "", password: "", role: "USER", counselorId: "" });
+      fetchUsers();
+    } catch {
+      toast.error("Failed to add user");
+    }
+  };
+
+  const handleDelete = async (id) => {
+    if (!window.confirm("Delete user?")) return;
+
+    try {
+      await deleteUser(id);
+      toast.success("Deleted");
+      fetchUsers();
+    } catch {
+      toast.error("Delete failed");
+    }
+  };
 
   return (
-    <div className="space-y-6 p-8 bg-gray-100 dark:bg-gray-900 min-h-screen transition-colors duration-300">
-      
-      <h1 className="text-3xl font-bold text-gray-800 dark:text-white">
-        Registered Users
-      </h1>
+    <div className="p-6">
+      <h2 className="text-2xl font-bold mb-4">Manage Users</h2>
 
-      <div className="overflow-x-auto bg-white dark:bg-gray-800 rounded-xl shadow transition-colors duration-300">
-        <table className="min-w-full text-left">
-          
-          <thead>
-            <tr className="bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-200 uppercase text-sm">
-              <th className="px-6 py-4">Name</th>
-              <th className="px-6 py-4">Email</th>
-              <th className="px-6 py-4">Phone</th>
-              <th className="px-6 py-4">Age</th>
-              <th className="px-6 py-4">Address</th>
-              <th className="px-6 py-4">Interests</th>
-              <th className="px-6 py-4">Skills</th>
-              <th className="px-6 py-4">Strengths</th>
-              <th className="px-6 py-4">Role</th>
+      {/* FORM */}
+      <form onSubmit={handleSubmit} className="space-y-3 mb-6">
+        <input
+          placeholder="Name"
+          value={form.name}
+          onChange={(e) => setForm({ ...form, name: e.target.value })}
+          className="w-full p-2 border rounded"
+          required
+        />
+
+        <input
+          placeholder="Email"
+          value={form.email}
+          onChange={(e) => setForm({ ...form, email: e.target.value })}
+          className="w-full p-2 border rounded"
+          required
+        />
+
+        <input
+          type="password"
+          placeholder="Password"
+          value={form.password}
+          onChange={(e) => setForm({ ...form, password: e.target.value })}
+          className="w-full p-2 border rounded"
+          required
+        />
+
+        <select
+          value={form.role}
+          onChange={(e) => setForm({ ...form, role: e.target.value })}
+          className="w-full p-2 border rounded"
+        >
+          <option value="USER">USER</option>
+          <option value="ADMIN">ADMIN</option>
+        </select>
+
+        <select
+          value={form.counselorId}
+          onChange={(e) => setForm({ ...form, counselorId: e.target.value })}
+          className="w-full p-2 border rounded"
+        >
+          <option value="">Assign Counselor</option>
+          {counselors.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.name}
+            </option>
+          ))}
+        </select>
+
+        <button className="bg-blue-600 text-white px-4 py-2 rounded">
+          Add User
+        </button>
+      </form>
+
+      {/* TABLE */}
+      <table className="min-w-full border">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Role</th>
+            <th>Counselor</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {users.map((u) => (
+            <tr key={u.id}>
+              <td>{u.id}</td>
+              <td>{u.name}</td>
+              <td>{u.email}</td>
+              <td>{u.role}</td>
+              <td>{u.counselor ? u.counselor.name : "None"}</td>
+              <td>
+                <button onClick={() => handleDelete(u.id)}>
+                  Delete
+                </button>
+              </td>
             </tr>
-          </thead>
-
-          <tbody>
-            {users.map((user, index) => (
-              <tr
-                key={index}
-                className="border-t border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 transition"
-              >
-                <td className="px-6 py-4 text-gray-800 dark:text-gray-100">{user.name}</td>
-                <td className="px-6 py-4 text-gray-800 dark:text-gray-100">{user.email}</td>
-                <td className="px-6 py-4 text-gray-800 dark:text-gray-100">{user.phone}</td>
-                <td className="px-6 py-4 text-gray-800 dark:text-gray-100">{user.age}</td>
-                <td className="px-6 py-4 text-gray-800 dark:text-gray-100">{user.address}</td>
-                <td className="px-6 py-4 text-gray-800 dark:text-gray-100">{user.interests}</td>
-                <td className="px-6 py-4 text-gray-800 dark:text-gray-100">{user.skills}</td>
-                <td className="px-6 py-4 text-gray-800 dark:text-gray-100">{user.strengths}</td>
-                <td className="px-6 py-4">
-                  <span className="px-3 py-1 text-sm bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-200 rounded-full">
-                    {user.role}
-                  </span>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-
-        </table>
-      </div>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 };
 
-export default AdminUsers;
+export default ManageUsers;

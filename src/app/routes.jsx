@@ -1,4 +1,5 @@
 import { Routes, Route, Navigate } from "react-router-dom";
+import ProtectedRoute from "./ProtectedRoute";
 
 // Auth
 import Login from "@/features/auth/pages/Login";
@@ -26,29 +27,37 @@ import LayoutWrapper from "@/layout/LayoutWrapper";
 
 const RoutesConfig = () => (
   <Routes>
+    {/* Default */}
     <Route path="/" element={<Navigate to="/login" />} />
+
+    {/* Public Routes */}
     <Route path="/login" element={<Login />} />
     <Route path="/register" element={<Register />} />
 
-    {/* User Pages */}
-    <Route path="/user" element={<LayoutWrapper />}>
-      <Route index element={<UserDashboard />} />
-      <Route path="explore" element={<ExploreCareers />} />
-      <Route path="assessment" element={<SkillAssessment />} />
-      <Route path="book-session" element={<BookSession />} />
-      <Route path="chat" element={<Chat />} />
-      <Route path="resume" element={<ResumeResources />} />
-      <Route path="profile" element={<Profile />} />
-    </Route>
+    {/* 🔐 Protected Routes Wrapper */}
+    <Route element={<ProtectedRoute />}>
 
-    {/* Admin Pages */}
-    <Route path="/admin" element={<LayoutWrapper />}>
-      <Route index element={<AdminDashboard />} />
-      <Route path="users" element={<ManageUsers />} />
-      <Route path="careers" element={<ManageCareers />} />
-      <Route path="counselors" element={<ManageCounselors />} />
-      <Route path="sessions" element={<Sessions />} />
-      <Route path="reports" element={<Reports />} />
+      {/* User Routes */}
+      <Route path="/user" element={<LayoutWrapper />}>
+        <Route index element={<UserDashboard />} />
+        <Route path="explore" element={<ExploreCareers />} />
+        <Route path="assessment" element={<SkillAssessment />} />
+        <Route path="book-session" element={<BookSession />} />
+        <Route path="chat" element={<Chat />} />
+        <Route path="resume" element={<ResumeResources />} />
+        <Route path="profile" element={<Profile />} />
+      </Route>
+
+      {/* Admin Routes */}
+      <Route path="/admin" element={<LayoutWrapper />}>
+        <Route index element={<AdminDashboard />} />
+        <Route path="users" element={<ManageUsers />} />
+        <Route path="careers" element={<ManageCareers />} />
+        <Route path="counselors" element={<ManageCounselors />} />
+        <Route path="sessions" element={<Sessions />} />
+        <Route path="reports" element={<Reports />} />
+      </Route>
+
     </Route>
 
     {/* Fallback */}

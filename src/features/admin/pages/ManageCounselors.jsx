@@ -1,113 +1,82 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import toast from "react-hot-toast";
+import { getCounselors, addCounselor, updateCounselor, deleteCounselor } from "../../../services/counselorService";
 
 const ManageCounselors = () => {
   const [counselors, setCounselors] = useState([]);
+  const [form, setForm] = useState({ name: "", expertise: "", email: "" });
+  const [editingId, setEditingId] = useState(null);
 
-  useEffect(() => {
-    const saved = JSON.parse(localStorage.getItem("counselors")) || [
-      {
-        name: "Dr. Smith",
-        specialization: "Career Counseling",
-        experience: "10 years",
-        availability: "Available",
-      },
-      {
-        name: "Dr. Williams",
-        specialization: "Educational Psychology",
-        experience: "8 years",
-        availability: "Available",
-      },
-      {
-        name: "Dr. Brown",
-        specialization: "Vocational Guidance",
-        experience: "12 years",
-        availability: "Busy",
-      },
-      {
-        name: "Dr. Johnson",
-        specialization: "Career Development",
-        experience: "6 years",
-        availability: "Available",
-      },
-    ];
-
-    setCounselors(saved);
-    localStorage.setItem("counselors", JSON.stringify(saved));
-  }, []);
-
-  const handleDelete = (index) => {
-    const updated = counselors.filter((_, i) => i !== index);
-    setCounselors(updated);
-    localStorage.setItem("counselors", JSON.stringify(updated));
-    toast.success("Counselor deleted");
+  const fetchData = async () => {
+    try {
+      const data = await getCounselors();
+      setCounselors(data || []);
+    } catch {
+      toast.error("Failed to load counselors");
+    }
   };
 
-  const getAvailabilityStyle = (status) => {
-    return status === "Available"
-      ? "bg-green-100 text-green-600"
-      : "bg-red-100 text-red-600";
+  useEffect(() => { fetchData(); }, []);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      if (editingId) await updateCounselor(editingId, form);
+      else await addCounselor(form);
+
+      toast.success(editingId ? "Updated" : "Added");
+      setForm({ name: "", expertise: "", email: "" });
+      setEditingId(null);
+      fetchData();
+    } catch { toast.error("Operation failed"); }
+  };
+
+  const handleDelete = async (id) => {
+    if (!window.confirm("Delete this counselor?")) return;
+    try {
+      await deleteCounselor(id);
+      setCounselors(prev => prev.filter(c => c.id !== id));
+      toast.success("Deleted successfully");
+    } catch { toast.error("Delete failed"); }
+  };
+
+  const handleEdit = (c) => {
+    setForm({ name: c.name, expertise: c.expertise, email: c.email });
+    setEditingId(c.id);
   };
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-3xl font-bold dark:text-white">
-        Manage Counselors
-      </h1>
+    <div className="p-6">
+      <h2 className="text-2xl font-bold mb-4">Manage Counselors</h2>
+      <form onSubmit={handleSubmit} className="space-y-4 mb-6">
+        <input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="Name" className="w-full p-2 border rounded" required />
+        <input value={form.expertise} onChange={e => setForm({ ...form, expertise: e.target.value })} placeholder="Expertise" className="w-full p-2 border rounded" required />
+        <input value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} placeholder="Email" className="w-full p-2 border rounded" required />
+        <button className="bg-blue-600 text-white px-4 py-2 rounded">{editingId ? "Update" : "Add"}</button>
+      </form>
 
-      <button className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition">
-        + Add New Counselor
-      </button>
-
-      <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-lg overflow-x-auto">
-        <table className="min-w-full">
-          <thead className="border-b border-gray-200 dark:border-gray-700">
-            <tr className="text-left text-gray-600 dark:text-gray-300 text-sm uppercase tracking-wider">
-              <th className="py-3 px-4">Name</th>
-              <th className="py-3 px-4">Specialization</th>
-              <th className="py-3 px-4">Experience</th>
-              <th className="py-3 px-4">Availability</th>
-              <th className="py-3 px-4">Actions</th>
+      <table className="min-w-full border">
+        <thead>
+          <tr>
+            <th>ID</th><th>Name</th><th>Expertise</th><th>Email</th><th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {counselors.length === 0 ? <tr><td colSpan="5" className="text-center p-4">No counselors found</td></tr> :
+          counselors.map(c => (
+            <tr key={c.id}>
+              <td>{c.id}</td>
+              <td>{c.name}</td>
+              <td>{c.expertise}</td>
+              <td>{c.email}</td>
+              <td className="space-x-2">
+                <button onClick={() => handleEdit(c)} className="text-blue-600">Edit</button>
+                <button onClick={() => handleDelete(c.id)} className="text-red-600">Delete</button>
+              </td>
             </tr>
-          </thead>
-
-          <tbody>
-            {counselors.map((c, index) => (
-              <tr
-                key={index}
-                className="border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition"
-              >
-                <td className="py-4 px-4 font-medium">{c.name}</td>
-                <td className="py-4 px-4">{c.specialization}</td>
-                <td className="py-4 px-4">{c.experience}</td>
-
-                <td className="py-4 px-4">
-                  <span
-                    className={`px-3 py-1 rounded-full text-sm font-medium ${getAvailabilityStyle(
-                      c.availability
-                    )}`}
-                  >
-                    {c.availability}
-                  </span>
-                </td>
-
-                <td className="py-4 px-4 flex gap-3">
-                  <button className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition">
-                    Edit
-                  </button>
-
-                  <button
-                    onClick={() => handleDelete(index)}
-                    className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition"
-                  >
-                    Delete
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 };

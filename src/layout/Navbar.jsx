@@ -11,9 +11,9 @@ const Navbar = ({ toggleSidebar }) => {
   const { darkMode, setDarkMode } = useContext(ThemeContext);
 
   const handleLogout = () => {
-    logout();
-    navigate("/login");
-  };
+  localStorage.clear();   // 🔥 use this instead
+  navigate("/login");
+};
 
   return (
     <nav className="flex justify-between items-center p-4 bg-white dark:bg-gray-800 shadow-md">
