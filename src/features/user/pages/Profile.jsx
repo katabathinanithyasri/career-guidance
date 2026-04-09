@@ -1,165 +1,128 @@
 import { useState, useEffect } from "react";
 import toast from "react-hot-toast";
+import axios from "axios";
 
-const STORAGE_KEY = "userProfile";
+const API_URL = "http://localhost:8080/api/users";
 
 const Profile = () => {
+  const [user, setUser] = useState(null);
+  const [isEditing, setIsEditing] = useState(false);
   const [form, setForm] = useState({
     name: "",
     email: "",
-    phone: "",
-    age: "",
-    address: "",
-    interests: "",
-    skills: "",
-    strengths: "",
+    avatar: "", // URL or base64
   });
 
-  const [isEditing, setIsEditing] = useState(false);
+  const userId = JSON.parse(localStorage.getItem("user"))?.id;
 
-  // Load profile from localStorage on mount
+  // Fetch profile on mount
   useEffect(() => {
-    const savedProfile = localStorage.getItem(STORAGE_KEY);
-    if (savedProfile) {
-      setForm(JSON.parse(savedProfile));
-    }
-  }, []);
+    if (!userId) return;
+    axios
+      .get(`${API_URL}/${userId}`)
+      .then((res) => {
+        setUser(res.data);
+        setForm({
+          name: res.data.name || "",
+          email: res.data.email || "",
+          avatar: res.data.avatar || "",
+        });
+      })
+      .catch(() => toast.error("Failed to fetch profile"));
+  }, [userId]);
 
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+  const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
+
+  const handleAvatar = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onloadend = () => setForm({ ...form, avatar: reader.result });
+    reader.readAsDataURL(file);
   };
 
-  const handleSave = () => {
-    // Basic validation
-    if (!form.name || !form.email) {
-      toast.error("Name and Email are required!");
-      return;
+  const handleSave = async () => {
+    try {
+      if (!form.name || !form.email) {
+        toast.error("Name and Email are required");
+        return;
+      }
+      const res = await axios.put(`${API_URL}/${userId}`, form);
+      setUser(res.data);
+      toast.success("Profile updated 🎉");
+      setIsEditing(false);
+    } catch {
+      toast.error("Failed to update profile");
     }
-
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(form));
-    toast.success("Profile Updated Successfully 🎉");
-    setIsEditing(false);
   };
+
+  if (!user) return <p>Loading...</p>;
 
   return (
-    <div className="space-y-8">
-      <h1 className="text-3xl font-bold dark:text-white">My Profile</h1>
+    <div className="max-w-md mx-auto p-6 bg-white dark:bg-gray-800 rounded-2xl shadow-lg space-y-6">
+      <h1 className="text-2xl font-bold dark:text-white">My Profile</h1>
 
-      <div className="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-lg space-y-6">
-        {!isEditing && (
-          <>
-            {/* Display profile */}
-            <p><strong>Name:</strong> {form.name}</p>
-            <p><strong>Email:</strong> {form.email}</p>
-            <p><strong>Phone:</strong> {form.phone}</p>
-            <p><strong>Age:</strong> {form.age}</p>
-            <p><strong>Address:</strong> {form.address}</p>
-            <p><strong>Interests:</strong> {form.interests}</p>
-            <p><strong>Skills:</strong> {form.skills}</p>
-            <p><strong>Strengths:</strong> {form.strengths}</p>
-
-            <button
-              onClick={() => setIsEditing(true)}
-              className="mt-4 px-6 py-2 bg-blue-600 text-white rounded-lg"
-            >
-              Edit Profile
-            </button>
-          </>
+      <div className="flex flex-col items-center">
+        {form.avatar ? (
+          <img
+            src={form.avatar}
+            alt="Avatar"
+            className="w-24 h-24 rounded-full mb-4 object-cover border-2 border-blue-500"
+          />
+        ) : (
+          <div className="w-24 h-24 rounded-full mb-4 bg-gray-300 flex items-center justify-center text-gray-600 text-xl font-bold">
+            {form.name[0] || "U"}
+          </div>
         )}
-
         {isEditing && (
-          <>
-            {/* Editable form */}
-            <input
-              name="name"
-              value={form.name}
-              onChange={handleChange}
-              type="text"
-              placeholder="Full Name"
-              className="w-full p-3 rounded-lg bg-gray-100 dark:bg-gray-700"
-            />
-
-            <input
-              name="email"
-              value={form.email}
-              onChange={handleChange}
-              type="email"
-              placeholder="Email"
-              className="w-full p-3 rounded-lg bg-gray-100 dark:bg-gray-700"
-            />
-
-            <input
-              name="phone"
-              value={form.phone}
-              onChange={handleChange}
-              type="text"
-              placeholder="Phone"
-              className="w-full p-3 rounded-lg bg-gray-100 dark:bg-gray-700"
-            />
-
-            <input
-              name="age"
-              value={form.age}
-              onChange={handleChange}
-              type="number"
-              placeholder="Age"
-              className="w-full p-3 rounded-lg bg-gray-100 dark:bg-gray-700"
-            />
-
-            <input
-              name="address"
-              value={form.address}
-              onChange={handleChange}
-              type="text"
-              placeholder="Address"
-              className="w-full p-3 rounded-lg bg-gray-100 dark:bg-gray-700"
-            />
-
-            <input
-              name="interests"
-              value={form.interests}
-              onChange={handleChange}
-              type="text"
-              placeholder="Interests (comma separated)"
-              className="w-full p-3 rounded-lg bg-gray-100 dark:bg-gray-700"
-            />
-
-            <input
-              name="skills"
-              value={form.skills}
-              onChange={handleChange}
-              type="text"
-              placeholder="Skills (comma separated)"
-              className="w-full p-3 rounded-lg bg-gray-100 dark:bg-gray-700"
-            />
-
-            <input
-              name="strengths"
-              value={form.strengths}
-              onChange={handleChange}
-              type="text"
-              placeholder="Strengths (comma separated)"
-              className="w-full p-3 rounded-lg bg-gray-100 dark:bg-gray-700"
-            />
-
-            <div className="flex gap-4 mt-4">
-              <button
-                onClick={handleSave}
-                className="px-6 py-2 bg-blue-600 text-white rounded-lg"
-              >
-                Save Changes
-              </button>
-
-              <button
-                onClick={() => setIsEditing(false)}
-                className="px-6 py-2 bg-gray-400 text-white rounded-lg"
-              >
-                Cancel
-              </button>
-            </div>
-          </>
+          <input type="file" accept="image/*" onChange={handleAvatar} className="mb-4" />
         )}
       </div>
+
+      {!isEditing ? (
+        <div className="space-y-2">
+          <p><strong>Name:</strong> {user.name}</p>
+          <p><strong>Email:</strong> {user.email}</p>
+          <button
+            onClick={() => setIsEditing(true)}
+            className="mt-4 w-full px-4 py-2 bg-blue-600 text-white rounded-lg"
+          >
+            Edit Profile
+          </button>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          <input
+            name="name"
+            value={form.name}
+            onChange={handleChange}
+            placeholder="Name"
+            className="w-full p-2 rounded-lg bg-gray-100 dark:bg-gray-700"
+          />
+          <input
+            name="email"
+            value={form.email}
+            onChange={handleChange}
+            type="email"
+            placeholder="Email"
+            className="w-full p-2 rounded-lg bg-gray-100 dark:bg-gray-700"
+          />
+          <div className="flex gap-4 mt-2">
+            <button
+              onClick={handleSave}
+              className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg"
+            >
+              Save
+            </button>
+            <button
+              onClick={() => setIsEditing(false)}
+              className="flex-1 px-4 py-2 bg-gray-400 text-white rounded-lg"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -107,7 +107,7 @@ const Sessions = () => {
 
       <div className="bg-white p-6 rounded-2xl shadow-lg mb-6">
         <form onSubmit={handleSubmit} className="space-y-4">
-          <input type="text" name="title" value={form.title} onChange={handleChange} placeholder="Title" className="w-full p-2 border rounded" required />
+          <input type="text" name="title" value={form.title} onChange={handleChange} placeholder="Name" className="w-full p-2 border rounded" required />
           <textarea name="description" value={form.description} onChange={handleChange} placeholder="Description" className="w-full p-2 border rounded" required />
 
           <select name="userId" value={form.userId} onChange={handleChange} className="w-full p-2 border rounded" required>

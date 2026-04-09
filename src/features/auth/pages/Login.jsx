@@ -1,7 +1,7 @@
 // src/features/auth/pages/Login.jsx
 import { Link, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
-import { loginUser } from "@/features/auth/authService";
+import { loginUser } from "../../../services/authService";
 import toast from "react-hot-toast";
 
 const Login = () => {

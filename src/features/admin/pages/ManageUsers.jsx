@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from "react";
 import toast from "react-hot-toast";
-import { getUsers, addUser, deleteUser } from "../../../services/userService";
+import { getUsers, addUser, updateUser, deleteUser } from "../../../services/userService";
 import { getCounselors } from "../../../services/counselorService";
 
 const ManageUsers = () => {
   const [users, setUsers] = useState([]);
   const [counselors, setCounselors] = useState([]);
+  const [editingId, setEditingId] = useState(null);
 
   const [form, setForm] = useState({
     name: "",
@@ -36,24 +37,10 @@ const ManageUsers = () => {
     fetchCounselors();
   }, []);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  // Add / Update user
 
-    const payload = {
-      ...form,
-      counselor: form.counselorId ? { id: form.counselorId } : null
-    };
 
-    try {
-      await addUser(payload);
-      toast.success("User added");
-      setForm({ name: "", email: "", password: "", role: "USER", counselorId: "" });
-      fetchUsers();
-    } catch {
-      toast.error("Failed to add user");
-    }
-  };
-
+  // Delete user
   const handleDelete = async (id) => {
     if (!window.confirm("Delete user?")) return;
 
@@ -65,6 +52,45 @@ const ManageUsers = () => {
       toast.error("Delete failed");
     }
   };
+
+ const handleSubmit = async (e) => {
+  e.preventDefault();
+
+  const payload = {
+    name: form.name,
+    email: form.email,
+    role: form.role,
+    counselor: form.counselorId ? { id: form.counselorId } : null
+  };
+
+  try {
+    if (editingId) {
+      await updateUser(editingId, payload); // edit existing
+      toast.success("User updated");
+    } else {
+      await addUser(payload); // add new
+      toast.success("User added");
+    }
+
+    setForm({ name: "", email: "", password: "", role: "USER", counselorId: "" });
+    setEditingId(null);
+    fetchUsers(); // refresh table
+  } catch (err) {
+    toast.error("Operation failed: " + err.message);
+  }
+};
+
+// Edit button handler
+const handleEdit = (u) => {
+  setForm({
+    name: u.name || "",
+    email: u.email || "",
+    password: "", // optional
+    role: u.role || "USER",
+    counselorId: u.counselor ? u.counselor.id : ""
+  });
+  setEditingId(u.id);
+};
 
   return (
     <div className="p-6">
@@ -94,7 +120,6 @@ const ManageUsers = () => {
           value={form.password}
           onChange={(e) => setForm({ ...form, password: e.target.value })}
           className="w-full p-2 border rounded"
-          required
         />
 
         <select
@@ -120,7 +145,7 @@ const ManageUsers = () => {
         </select>
 
         <button className="bg-blue-600 text-white px-4 py-2 rounded">
-          Add User
+          {editingId ? "Update User" : "Add User"}
         </button>
       </form>
 
@@ -133,7 +158,7 @@ const ManageUsers = () => {
             <th>Email</th>
             <th>Role</th>
             <th>Counselor</th>
-            <th>Action</th>
+            <th>Actions</th>
           </tr>
         </thead>
 
@@ -145,8 +170,11 @@ const ManageUsers = () => {
               <td>{u.email}</td>
               <td>{u.role}</td>
               <td>{u.counselor ? u.counselor.name : "None"}</td>
-              <td>
-                <button onClick={() => handleDelete(u.id)}>
+              <td className="space-x-2">
+                <button onClick={() => handleEdit(u)} className="text-blue-600">
+                  Edit
+                </button>
+                <button onClick={() => handleDelete(u.id)} className="text-red-600">
                   Delete
                 </button>
               </td>

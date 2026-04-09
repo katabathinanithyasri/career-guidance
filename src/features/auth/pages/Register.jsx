@@ -1,6 +1,6 @@
 // src/features/auth/pages/Register.jsx
 import { useState } from "react";
-import { registerUser } from "@/features/auth/authService";
+import { registerUser } from "@/services/authService";
 import { useNavigate, Link } from "react-router-dom";
 import toast from "react-hot-toast";
 
