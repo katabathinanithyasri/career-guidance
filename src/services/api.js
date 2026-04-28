@@ -2,23 +2,30 @@ const BASE_URL = "https://career-guidance-backend-production-9c75.up.railway.app
 
 export const apiRequest = async (endpoint, method = "GET", data = null) => {
   try {
-    const res = await fetch(`${BASE_URL}${endpoint}`, {
+    const options = {
       method,
       headers: {
         "Content-Type": "application/json",
       },
-      body: data ? JSON.stringify(data) : null,
-    });
+    };
 
-    const result = await res.json();
+    // Only add body if data exists AND method allows it
+    if (data && method !== "GET") {
+      options.body = JSON.stringify(data);
+    }
+
+    const res = await fetch(`${BASE_URL}${endpoint}`, options);
+
+    const text = await res.text(); // safer than direct json parse
+    const result = text ? JSON.parse(text) : null;
 
     if (!res.ok) {
-      throw new Error(result || "API Error");
+      throw new Error(result?.message || "API Error");
     }
 
     return result;
   } catch (error) {
-    console.error(error);
+    console.error("API Error:", error.message);
     throw error;
   }
 };
