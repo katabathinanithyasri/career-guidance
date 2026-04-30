@@ -9,14 +9,14 @@ export const apiRequest = async (endpoint, method = "GET", data = null) => {
       },
     };
 
-    // Only add body if data exists AND method allows it
+    // Only add body for non-GET requests
     if (data && method !== "GET") {
       options.body = JSON.stringify(data);
     }
 
     const res = await fetch(`${BASE_URL}${endpoint}`, options);
 
-    const text = await res.text(); // safer than direct json parse
+    const text = await res.text();
     const result = text ? JSON.parse(text) : null;
 
     if (!res.ok) {
